@@ -1,24 +1,81 @@
+# import libraries
 import sys
+import pandas as pd
+import numpy as np
+import re
+from sqlalchemy import create_engine
+from nltk.tokenize import word_tokenize
+from nltk.stem.wordnet import WordNetLemmatizer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.feature_extraction.text import CountVectorizer,TfidfTransformer,TfidfVectorizer
+from sklearn.model_selection import train_test_split,GridSearchCV
+from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.externals import joblib
+import nltk
+nltk.download(['punkt', 'wordnet'])
 
 
 def load_data(database_filepath):
-    pass
+    engine = create_engine('sqlite:///' + database_filepath)
+    df = pd.read_sql_query('select * from "disaster_response_tweets"', con=engine)
+    X = df['message'].values
+    category_names = ['related', 'request', 'offer', 'aid_related', 'medical_help', 'medical_products', 'search_and_rescue', 'security', 'military', 'child_alone', 'water', 'food', 'shelter', 'clothing', 'money', 'missing_people', 'refugees', 'death', 'other_aid', 'infrastructure_related', 'transport', 'buildings', 'electricity', 'tools', 'hospitals', 'shops', 'aid_centers', 'other_infrastructure', 'weather_related', 'floods', 'storm', 'fire', 'earthquake', 'cold', 'other_weather', 'direct_report']
+    Y = df[category_names].values
+    
+    return X, Y, category_names
 
 
 def tokenize(text):
-    pass
+#     remove any punctuation character
+    text = re.sub(r"[^a-zA-Z0-9]",' ',text)
+    tokens = word_tokenize(text)
+    
+    # initiate lemmatizer
+    lemmatizer = WordNetLemmatizer()
 
+    # iterate through each token
+    clean_tokens = []
+    for tok in tokens:
+        
+        # lemmatize, normalize case, and remove leading/trailing white space
+        clean_tok = lemmatizer.lemmatize(tok).lower().strip()
+        clean_tokens.append(clean_tok)
+
+    return clean_tokens
 
 def build_model():
-    pass
+
+    pipeline = Pipeline([
+        ('vect', CountVectorizer(tokenizer=tokenize)),
+        ('tfidf', TfidfTransformer()),
+        ('moc', MultiOutputClassifier(RandomForestClassifier(n_estimators=100)))
+    ])
+
+    parameters ={
+        'vect__max_features': (None, 5000, 10000, 50000),
+        'vect__ngram_range': ((1, 1), (1, 2), (2, 2)),       
+        'vect__max_df': (0.5, 0.75, 1.0),
+        'tfidf__norm': ('l1', 'l2'),
+        'tfidf__use_idf': (True, False),
+     
+    }
+
+    model = GridSearchCV(pipeline, parameters,cv=5,n_jobs=-1, verbose=1)
+
+    return model
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+    
+    y_pred = model.predict(X_test)
+    print(classification_report(np.hstack(Y_test),np.hstack(y_pred)))
 
 
 def save_model(model, model_filepath):
-    pass
+    
+    joblib.dump(model, model_filepath)
 
 
 def main():
