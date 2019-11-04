@@ -49,12 +49,11 @@ def build_model():
 
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize)),
-        ('tfidf', TfidfTransformer()),
+        ('tfidf', TfidfTransformer()), 
         ('moc', MultiOutputClassifier(RandomForestClassifier(n_estimators=100)))
     ])
 
     parameters ={
-        'vect__max_features': (None, 5000, 10000, 50000),
         'vect__ngram_range': ((1, 1), (1, 2), (2, 2)),       
         'vect__max_df': (0.5, 0.75, 1.0),
         'tfidf__norm': ('l1', 'l2'),
