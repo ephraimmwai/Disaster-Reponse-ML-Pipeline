@@ -1,0 +1,5 @@
+#Ignore deployment folder 
+deploy/
+
+#ignore trained model pickles - Shared separately
+models/classifier.pkl
