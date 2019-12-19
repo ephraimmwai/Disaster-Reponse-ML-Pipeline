@@ -7,7 +7,7 @@ from nltk.tokenize import word_tokenize
 
 from flask import Flask
 from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
+import plotly.graph_objs as plt
 from sklearn.externals import joblib
 # import joblib
 from sqlalchemy import create_engine
@@ -16,6 +16,15 @@ from sqlalchemy import create_engine
 app = Flask(__name__)
 
 def tokenize(text):
+        '''
+    INPUT:
+    text - message text
+
+    OUTPUT:
+    clean_tokens - tokenized text
+
+    Tokenizes the messages
+    '''
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -24,25 +33,10 @@ def tokenize(text):
         clean_tok = lemmatizer.lemmatize(tok).lower().strip()
         clean_tokens.append(clean_tok)
 
-    return clean_tokens
+    return clean_tokens 
 
-# load data
-<<<<<<< HEAD:run.py
-# engine = create_engine('sqlite:///../data/DisasterResponse.db')
-# df = pd.read_sql_table('disaster_response_tweets', engine)
-# engine = create_engine('sqlite:///../data/DisasterResponse.db')
-# path = '/home/ubuntu/disaster-response-env/disaster-reponse-environment/'
-# path = 'C:/Users/lenovo/OneDrive - Centum Investment Company Limited/Food/disaster_response_pipeline_project/'
-=======
-engine = create_engine('sqlite:///../data/DisasterResponse.db')
+engine = create_engine('sqlite:///data/DisasterResponse.db')
 df = pd.read_sql_table('disaster_response_tweets', engine)
-
-# load model
-model = joblib.load("../models/classifier.pkl")
->>>>>>> dfd1c71c382a4c997f75e7cba24fbe6f55c7f262:app/run.py
-
-engine = create_engine(r'sqlite:///data/DisasterResponse.db')
-df = pd.read_sql_query('select * from "disaster_response_tweets"', con=engine)
 
 # load model
 # model = joblib.load("models/classifier.pkl")
@@ -53,30 +47,47 @@ with open("models/classifier.pkl", 'rb') as f:
 @app.route('/')
 @app.route('/index')
 def index():
-    
+
+    '''
+    Generated the summarised data visualization and render the home page
+    '''    
     # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    
+    # category count
+    cats_df = df[df.columns.tolist()[4:]].sum().reset_index().rename(columns={'index':'cat_name', 0:'count'}).sort_values(by='count',ascending=False)
+    cat_names,cat_counts = cats_df['cat_name'],cats_df['count']
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
     graphs = [
         {
             'data': [
-                Bar(
-                    x=genre_names,
-                    y=genre_counts
+                plt.Pie(
+                    labels=genre_names,
+                    values=genre_counts,
+                    marker_colors=['lightsteelblue','goldenrod','cadetblue']
                 )
             ],
 
             'layout': {
-                'title': 'Distribution of Message by Genres',
+                'title': 'Distribution of Message by Categories',
+                'paper_bgcolor':'rgba(255, 1, 1, 0)'
+            }
+        },
+        {
+            'data': [
+                plt.Bar(
+                    x=cat_names,
+                    y=cat_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message by Categories',
                 'yaxis': {
                     'title': "Messages Count"
                 },
                 'xaxis': {
-                    'title': "Genre"
+                    'title': "Category"
                 }
             }
         }
@@ -93,6 +104,10 @@ def index():
 # web page that handles user query and displays model results
 @app.route('/go')
 def go():
+    '''
+    Handle the message post data to classify the message using the classification model
+    '''
+
     # save user input in query
     query = request.args.get('query', '') 
 
@@ -100,7 +115,7 @@ def go():
     classification_labels = model.predict([query])[0]
     classification_results = dict(zip(df.columns[4:], classification_labels))
 
-    # This will render the go.html Please see that file. 
+    # This will render the go.html
     return render_template(
         'go.html',
         query=query,
@@ -109,7 +124,7 @@ def go():
 
 
 def main():
-    app.run(host='0.0.0.0', port=3001)
+    app.run(host='127.0.0.1', port=3001)
 
 
 if __name__ == '__main__':

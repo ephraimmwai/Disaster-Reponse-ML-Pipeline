@@ -17,6 +17,18 @@ import nltk
 nltk.download(['punkt', 'wordnet'])
 
 def load_data(database_filepath):
+
+    '''
+    INPUT:
+    database_filepath - SQLite database name / filepath
+
+    OUTPUT:
+    X - a list of all messages text
+    Y - 1 or 0 , depending on message category
+    category_names - a list of  the message categories
+
+    Loads the data from the SQLite database 
+    '''
     engine = create_engine('sqlite:///' + database_filepath)
     df = pd.read_sql_query('select * from "disaster_response_tweets"', con=engine)
     X = df['message'].values
@@ -27,6 +39,16 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    '''
+    INPUT:
+    text - message text
+
+    OUTPUT:
+    clean_tokens - tokenized text
+
+    Tokenizes the messages
+    '''
+
 #     remove any punctuation character
     text = re.sub(r"[^a-zA-Z0-9]",' ',text)
     tokens = word_tokenize(text)
@@ -45,6 +67,9 @@ def tokenize(text):
     return clean_tokens
 
 def build_model():
+    '''
+    Build our pipeline model
+    '''
 
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize)),
@@ -63,13 +88,26 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    '''
+    INPUT:
+    model - classifier model
+    X_test, Y_test - test dataset
+    category_names -
     
+    Evaluates our model and prints a report on test data    
+    '''
     y_pred = model.predict(X_test)
     print(classification_report(np.hstack(Y_test),np.hstack(y_pred)))
 
 
 def save_model(model, model_filepath):
-    
+    '''
+    INPUT:
+    model - trained model
+    model_filepath - file pathname to save the model
+
+    Saves the model as a pickle file
+    '''
     joblib.dump(model, model_filepath)
 
 

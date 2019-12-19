@@ -6,6 +6,16 @@ from sqlalchemy import create_engine
 
 
 def load_data(messages_filepath, categories_filepath):
+  '''
+  INPUT:
+  messages_filepath - path name to messages csv file
+  categories_filepath - pathname to categories csv file
+
+  OUTPUT:
+  df - dataframe of both the messages and categories
+
+  Loads messages data from csv files
+  '''
   messages = pd.read_csv(messages_filepath)
   categories = pd.read_csv(categories_filepath)
   df = messages.merge(categories, how='inner', on='id')
@@ -14,6 +24,15 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+  '''
+  INPUT:
+  df - a dataframe with categorised messages
+
+  OUTPUT:
+  df - cleaned up dataframe
+
+  Cleans up the data
+  '''
   #split categories into 36 different columns
   categories = df.categories.str.split(';',expand=True)
   # select the first row of the categories dataframe
@@ -40,11 +59,21 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
-    engine = create_engine('sqlite:///'+database_filename)
-    df.to_sql('disaster_response_tweets', engine, index=False)  
+
+  '''
+  INPUT:
+  df - cleaned up dataframe
+  database_filename - name of the sqlite databse
+
+  Save the cleaned data into an SQLite database
+  '''
+  engine = create_engine('sqlite:///'+database_filename)
+  df.to_sql('disaster_response_tweets', engine, index=False)  
 
 
 def main():
+
+
     if len(sys.argv) == 4:
 
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]
