@@ -97,7 +97,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
     Evaluates our model and prints a report on test data    
     '''
     y_pred = model.predict(X_test)
-    print(classification_report(np.hstack(Y_test),np.hstack(y_pred)))
+    print(classification_report(np.hstack(Y_test),np.hstack(y_pred), labels=category_names,target_names = category_names))
 
 
 def save_model(model, model_filepath):
